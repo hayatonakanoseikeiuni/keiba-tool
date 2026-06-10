@@ -1,9 +1,9 @@
 import streamlit as st
 
 # ページのタイトル
-st.set_page_config(page_title="東京ダート 期待度判定ツール", layout="centered")
-st.title("東京ダート 期待度判定ツール")
-st.write("2026年最新バイアス対応版：判定開始ボタン設置・詳細内訳表示")
+st.set_page_config(page_title="東京ダ1400/1600 期待度判定ツール", layout="centered")
+st.title("東京ダ1400/1600 期待度判定ツール")
+st.write("2026年最新バイアス対応版")
 
 # 1. コース選択
 course = st.radio("【コース選択】", ["東京ダート 1600m", "東京ダート 1400m"], horizontal=True)
@@ -92,10 +92,10 @@ if st.button("判定開始"):
     # 4. 判定結果表示
     st.subheader("判定結果")
     with st.container(border=True):
-        if score >= 90: level = "Sランク"
-        elif score >= 60: level = "Aランク"
-        elif score >= 35: level = "Bランク"
-        else: level = "Cランク"
+        if score >= 90: level = "Sランク【軸推奨】"
+        elif score >= 60: level = "Aランク【連軸　頭まである一頭】"
+        elif score >= 35: level = "Bランク【連下・抑えでほしい一頭】"
+        else: level = "Cランク【オッズをみて消却も考えましょう】"
         
         st.markdown(f"## **{level}** （合計: {score}点）")
         st.markdown("---")
