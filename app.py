@@ -3,14 +3,14 @@ import streamlit as st
 # ページのタイトル
 st.set_page_config(page_title="東京ダート 期待度判定ツール", layout="centered")
 st.title("東京ダート 期待度判定ツール")
-st.write("2026年最新バイアス・騎手データ統合版")
+st.write("2026年最新バイアス対応版：判定開始ボタン設置")
 
 # 1. コース選択
 course = st.radio("【コース選択】", ["東京ダート 1600m", "東京ダート 1400m"], horizontal=True)
 
 st.markdown("---")
 
-# 2. 条件入力
+# 2. 条件入力（サイドバーやカラムで整理）
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -42,48 +42,52 @@ prev_disadvantage = st.selectbox("前走の敗因/内容", ["特なし/実力負
 
 st.markdown("---")
 
-# 3. 判定ロジック
-score = 0
-plus_reasons, minus_reasons = [], []
+# 🌟 判定ボタン
+if st.button("🚀 判定開始"):
+    # ボタンが押されたときだけ以下の処理が実行される
+    score = 0
+    plus_reasons, minus_reasons = [], []
 
-# コース別バイアス
-if "1600m" in course:
-    if gate_num >= 13: score += 25; plus_reasons.append("1600m外枠有利（+25）")
-    elif gate_num <= 4: score -= 15; minus_reasons.append("1600m内枠砂被り（-15）")
-else: # 1400m
-    if 4 <= gate_num <= 9: score += 20; plus_reasons.append("1400m中枠安定配置（+20）")
-    if style in ["逃げ", "先行"]: score += 15; plus_reasons.append("1400m先行有利（+15）")
+    # コース別バイアス
+    if "1600m" in course:
+        if gate_num >= 13: score += 25; plus_reasons.append("1600m外枠有利（+25）")
+        elif gate_num <= 4: score -= 15; minus_reasons.append("1600m内枠砂被り（-15）")
+    else: # 1400m
+        if 4 <= gate_num <= 9: score += 20; plus_reasons.append("1400m中枠安定配置（+20）")
+        if style in ["逃げ", "先行"]: score += 15; plus_reasons.append("1400m先行有利（+15）")
 
-# 騎手スコア (資料データ統合版)
-jockey_scores = {
-    "ルメール": 30, "戸崎圭太": 28, "レーン": 25, "モレイラ": 25, 
-    "佐々木大輔": 22, "田辺裕信": 20, "横山武史": 20, "原優介": 18, 
-    "川田将雅": 18, "横山和生": 18, "三浦皇成": 15, "坂井瑠星": 15, 
-    "菅原明良": 15, "C.デムーロ": 15, "武豊": 15, "内田博幸": 12,
-    "松山弘平": 12, "岩田望来": 12, "鮫島克駿": 12, "木幡巧也": 12,
-    "キング": 10, "津村明秀": 10, "丹内祐次": 10, "松岡正海": 10, 
-    "吉田豊": 10, "石川裕紀人": 10, "大野拓弥": 10, "木幡育也": 10, 
-    "木幡初也": 10, "永野猛蔵": 8, "小林勝太": 8, "横山典弘": 8, 
-    "高杉吏麒": 8, "団野大成": 8, "石橋脩": 8, "江田照男": 8
-}
-score += jockey_scores.get(jockey, 10)
-plus_reasons.append(f"騎手：{jockey}（+{jockey_scores.get(jockey, 10)}）")
+    # 騎手スコア
+    jockey_scores = {
+        "ルメール": 30, "戸崎圭太": 28, "レーン": 25, "モレイラ": 25, 
+        "佐々木大輔": 22, "田辺裕信": 20, "横山武史": 20, "原優介": 18, 
+        "川田将雅": 18, "横山和生": 18, "三浦皇成": 15, "坂井瑠星": 15, 
+        "菅原明良": 15, "C.デムーロ": 15, "武豊": 15, "内田博幸": 12,
+        "松山弘平": 12, "岩田望来": 12, "鮫島克駿": 12, "木幡巧也": 12,
+        "キング": 10, "津村明秀": 10, "丹内祐次": 10, "松岡正海": 10, 
+        "吉田豊": 10, "石川裕紀人": 10, "大野拓弥": 10, "木幡育也": 10, 
+        "木幡初也": 10, "永野猛蔵": 8, "小林勝太": 8, "横山典弘": 8, 
+        "高杉吏麒": 8, "団野大成": 8, "石橋脩": 8, "江田照男": 8
+    }
+    score += jockey_scores.get(jockey, 10)
+    plus_reasons.append(f"騎手：{jockey}（+{jockey_scores.get(jockey, 10)}）")
 
-# 血統
-if sire in ["シニスターミニスター", "ヘニーヒューズ"]: score += 20
-elif sire in ["ドレフォン", "マインドユアビスケッツ"]: score += 15
+    # 血統
+    if sire in ["シニスターミニスター", "ヘニーヒューズ"]: score += 20
+    elif sire in ["ドレフォン", "マインドユアビスケッツ"]: score += 15
 
-# 前走
-if prev_last_3f_fastest == "あり": score += (20 if track_condition in ["重馬場", "不良馬場"] else 5)
-if prev_rank in ["1着", "2着", "3着"]: score += 15
-if prev_condition == "クラス降級": score += 25
+    # 前走
+    if prev_last_3f_fastest == "あり": score += (20 if track_condition in ["重馬場", "不良馬場"] else 5)
+    if prev_rank in ["1着", "2着", "3着"]: score += 15
+    if prev_condition == "クラス降級": score += 25
 
-# 判定表示
-st.subheader("判定結果")
-with st.container(border=True):
-    level = "Sランク" if score >= 90 else "Aランク" if score >= 60 else "Bランク" if score >= 35 else "Cランク"
-    st.markdown(f"## **{level}** （合計: {score}点）")
-    st.markdown("---")
-    c1, c2 = st.columns(2)
-    with c1: st.markdown("**[+]**"); [st.write(f"・{r}") for r in plus_reasons]
-    with c2: st.markdown("**[-]**"); [st.write(f"・{r}") for r in minus_reasons]
+    # 判定表示
+    st.subheader("判定結果")
+    with st.container(border=True):
+        level = "Sランク" if score >= 90 else "Aランク" if score >= 60 else "Bランク" if score >= 35 else "Cランク"
+        st.markdown(f"## **{level}** （合計: {score}点）")
+        st.markdown("---")
+        c1, c2 = st.columns(2)
+        with c1: st.markdown("**[+]**"); [st.write(f"・{r}") for r in plus_reasons]
+        with c2: st.markdown("**[-]**"); [st.write(f"・{r}") for r in minus_reasons]
+else:
+    st.info("条件を選択して「判定開始」ボタンを押してください。")
