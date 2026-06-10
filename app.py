@@ -26,7 +26,14 @@ with col2:
         "江田照男", "その他"
     ]
     jockey = st.selectbox("騎手", jockey_list)
-    lineage = st.selectbox("血統系統", ["ミスプロ系(王道)", "キングマンボ系(パワー)", "サンデー系(瞬発)", "米国型(スピード持続)", "その他"])
+    lineage = st.selectbox("血統系統", [
+        "ノーザンダンサー系(万能・パワー)", 
+        "ミスプロ系(王道)", 
+        "キングマンボ系(パワー)", 
+        "サンデー系(瞬発)", 
+        "米国型(スピード持続)", 
+        "その他"
+    ])
     sire = st.selectbox("特注種牡馬", [
         "なし", "シニスターミニスター", "ヘニーヒューズ", "ドレフォン", "マインドユアビスケッツ",
         "ゴールドドリーム", "シルバーステート", "ジャスタウェイ", "ロードカナロア"
@@ -75,6 +82,10 @@ if st.button("判定開始"):
     score += j_score
     plus_reasons.append(f"騎手: {jockey} (+{j_score})")
     
+    if lineage == "ノーザンダンサー系(万能・パワー)":
+        score += 10
+        plus_reasons.append("ノーザンダンサー系保持 (+10)")
+
     if sire in ["シニスターミニスター", "ヘニーヒューズ"]:
         score += 20
         plus_reasons.append(f"鉄板種牡馬: {sire} (+20)")
