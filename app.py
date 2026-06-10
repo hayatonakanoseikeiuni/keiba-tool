@@ -45,7 +45,7 @@ with col3:
 st.markdown("---")
 
 # 3. 判定ロジック
-if st.button("🚀 判定開始"):
+if st.button("判定開始"):
     score = 0
     plus_reasons, minus_reasons = [], []
 
@@ -85,16 +85,16 @@ if st.button("🚀 判定開始"):
     if prev_margin == "0.1〜0.5秒差": score += 5; plus_reasons.append("僅差負け（+5）")
     if is_distance_shortening: score += 15; plus_reasons.append("距離短縮（+15）")
 
-    # 4. 結果表示
-    st.subheader("📊 判定結果")
+  # 4. 結果表示
+    st.subheader("判定結果")
     with st.container(border=True):
-        if score >= 70: level = "Sランク【鉄板級】"
-        elif score >= 50: level = "Aランク【勝負の一頭】"
-        elif score >= 35: level = "Bランク【連下・抑え】"
+        # 基準を10点ずつ引き下げて甘めに設定
+        if score >= 60: level = "Sランク【鉄板級】"
+        elif score >= 40: level = "Aランク【勝負の一頭】"
+        elif score >= 25: level = "Bランク【連下・抑え】"
         else: level = "Cランク【消し検討】"
         
-        st.markdown(f"## **{level}** （合計: {score}点）")
-        st.markdown("---")
+        st.markdown(f"## **{level}** （合計: {score}点）")        st.markdown("---")
         
         c1, c2 = st.columns(2)
         with c1:
