@@ -39,14 +39,13 @@ with col3:
     weight = st.selectbox("馬体重", ["490kg未満", "490kg以上"])
     prev_rank = st.selectbox("前走着順", ["1着", "2着", "3着", "4〜5着", "6〜9着", "10着以下"])
     prev_margin = st.selectbox("前走の着差", ["大敗", "0.6〜1.0秒差", "0.1〜0.5秒差", "勝ち"])
-    prev_last_3f_fastest = st.radio("前走上がり最速", ["なし", "あり"], horizontal=True)
-
-prev_condition = st.selectbox("前走種類", ["通常ダート", "芝からの転戦", "クラス降級"])
+    # 距離短縮項目を追加
+    is_distance_shortening = st.checkbox("前走からの距離短縮")
 
 st.markdown("---")
 
 # 3. 判定ロジック
-if st.button("判定開始"):
+if st.button("🚀 判定開始"):
     score = 0
     plus_reasons, minus_reasons = [], []
 
@@ -84,10 +83,10 @@ if st.button("判定開始"):
     elif prev_rank == "2着": score += 15; plus_reasons.append("前走2着（+15）")
     elif prev_rank == "3着": score += 10; plus_reasons.append("前走3着（+10）")
     if prev_margin == "0.1〜0.5秒差": score += 5; plus_reasons.append("僅差負け（+5）")
-    if prev_condition == "クラス降級": score += 25; plus_reasons.append("クラス降級（+25）")
+    if is_distance_shortening: score += 15; plus_reasons.append("距離短縮（+15）")
 
     # 4. 結果表示
-    st.subheader("判定結果")
+    st.subheader("📊 判定結果")
     with st.container(border=True):
         if score >= 70: level = "Sランク【鉄板級】"
         elif score >= 50: level = "Aランク【勝負の一頭】"
