@@ -1,183 +1,94 @@
 import streamlit as st
 
 # ページのタイトル
-st.set_page_config(page_title="東京ダート 期待度判定ツール", layout="centered")
-st.title("東京ダート 期待度判定ツール")
-st.write("コース特性・馬場・血統・騎手・前走条件から期待度を総合判定します。")
+st.set_page_config(page_title="東京ダ1400.1600 期待度判定ツール", layout="centered")
+st.title("東京ダ1400.1600 期待度判定ツール")
 
 # 1. コース選択
 course = st.radio("【コース選択】", ["東京ダート 1600m", "東京ダート 1400m"], horizontal=True)
 
 st.markdown("---")
 
-# 2. 条件入力（すべての項目を均等に配置）
+# 2. 条件入力
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    gate = st.selectbox("枠順 (馬番)", [f"{i}番" for i in range(1, 17)])
+    gate = st.selectbox("枠順", [f"{i}番" for i in range(1, 17)])
     gate_num = int(gate.replace("番", ""))
-    style = st.selectbox("脚質 (想定)", ["逃げ", "先行", "差し", "追い込み"])
+    style = st.selectbox("脚質", ["逃げ", "先行", "差し", "追い込み"])
     track_condition = st.selectbox("馬場状態", ["良馬場", "稍重", "重馬場", "不良馬場"])
 
 with col2:
-    jockey_list = [
-        "ルメール", "レーン (短期免許の鬼)", "モレイラ (マジックマン)",
-        "戸崎圭太", "川田将雅", "横山武史", "武豊", "C.デムーロ",
-        "菅原明良", "坂井瑠星", "佐々木大輔", "田辺裕信", "三浦皇成",
-        "内田博幸", "津村明秀", "岩田望来", "西村淳也", "鮫島克駿",
-        "松山弘平", "キング", "丹内祐次", "木幡巧也", "大野拓弥",
-        "その他（上記以外）"
-    ]
-    jockey = st.selectbox("ジョッキー", jockey_list)
+    jockey = st.selectbox("騎手", [
+        "ルメール", "レーン", "モレイラ", "戸崎圭太", "川田将雅", "横山武史", 
+        "武豊", "C.デムーロ", "菅原明良", "坂井瑠星", "佐々木大輔", 
+        "田辺裕信", "三浦皇成", "内田博幸", "津村明秀", "岩田望来", 
+        "西村淳也", "鮫島克駿", "松山弘平", "キング", "その他"
+    ])
     
-    bloodline = st.selectbox(
-        "血統 (種牡馬)", 
-        [
-            "シニスターミニスター (ダート最強格)", 
-            "ヘニーヒューズ (抜群の安定感)", 
-            "ドレフォン", "ロードカナロア", "ホッコータルマエ",
-            "キタサンブラック (大型一発あり)", "その他"
-        ]
-    )
-    is_large_heavy = st.selectbox("馬体重（馬格）", ["490kg未満", "490kg以上の大型馬"])
+    # 系統と特注種牡馬に分離
+    lineage = st.selectbox("血統系統", [
+        "ミスプロ系", "キングマンボ系", "サンデー系", "ロベルト系", "その他"
+    ])
+    sire = st.selectbox("特注種牡馬", ["なし", "シニスターミニスター", "ヘニーヒューズ"])
+    weight = st.selectbox("馬体重", ["490kg未満", "490kg以上"])
 
 with col3:
-    distance_change = st.selectbox("前走からの距離", ["同距離/延長", "距離短縮 (例:1800→1600)"])
-    prev_track = st.selectbox("前走の競馬場", ["中央4場 (東京/中山/京都/阪神)", "ローカル/中京/新潟など"])
-    prev_condition = st.selectbox("前走のレース種類", ["通常のダート戦", "前走は【芝】を走っていた", "今回【クラス下がり(降級)】"])
+    prev_rank = st.selectbox("前走着順", ["1着", "2着", "3着", "4〜5着", "6〜9着", "10着以下"])
+    distance_change = st.selectbox("距離短縮", ["あり", "なし"])
+    prev_track = st.selectbox("前走競馬場", ["中央4場", "ローカル/他"])
 
-# 3列の下に残りの1つの項目を配置
-prev_disadvantage = st.selectbox("前走の敗因・内容", ["特なし/実力負け", "前走【出遅れ】や【直線前詰まり】", "前走【ハイペースに巻き込まれ】失速"])
+prev_condition = st.selectbox("前走種類", ["通常ダート", "芝からの転戦", "クラス降級"])
+prev_disadvantage = st.selectbox("前走の敗因/内容", ["特なし/実力負け", "勝ち", "出遅れ/詰まり", "ハイペース失速"])
 
 st.markdown("---")
 
-# 3. 判定ロジック（点数計算）
+# 3. 判定ロジック
 score = 0
 plus_reasons = []
 minus_reasons = []
 
-# --- 基本得点：脚質 ---
+# 脚質・馬場
 if style in ["逃げ", "先行"]:
     score += 20
-    plus_reasons.append("ダートの定石である前有利（+20）")
+    plus_reasons.append("前有利な脚質（+20）")
 
-# --- 馬場状態のロジック ---
-if track_condition in ["重馬場", "不良馬場"]:
-    if style in ["逃げ", "先行"]:
-        score += 15
-        plus_reasons.append(f"{track_condition}の高速馬場 × 前に行ける脚質（+15）")
-    elif style == "追い込み":
-        score -= 10
-        minus_reasons.append(f"{track_condition}の高速馬場は前が止まらず、追い込み不利（-10）")
-elif track_condition == "良馬場":
-    if is_large_heavy == "490kg以上の大型馬":
-        score += 10
-        plus_reasons.append("タフな良馬場で活きるパワー型の大型馬（+10）")
-
-# --- 血統の配点 ---
-if bloodline in ["シニスターミニスター (ダート最強格)", "ヘニーヒューズ (抜群の安定感)"]:
-    score += 20
-    plus_reasons.append("血統：東京ダート鉄板種牡馬（+20）")
-elif bloodline in ["ドレフォン", "ロードカナロア", "ホッコータルマエ", "キタサンブラック (大型一発あり)"]:
-    score += 10
-    plus_reasons.append("血統：東京ダート好相性（+10）")
-
-# --- 騎手データ ---
-jockey_scores = {
-    "ルメール": 30, "レーン (短期免許の鬼)": 30, "モレイラ (マジックマン)": 30,
-    "戸崎圭太": 25,
-    "川田将雅": 20, "横山武史": 20, "武豊": 20, "C.デムーロ": 20,
-    "菅原明良": 18, "坂井瑠星": 18, "佐々木大輔": 18,
-    "田辺裕信": 15, "三浦皇成": 15, "内田博幸": 15,
-    "津村明秀": 12, "岩田望来": 12, "西村淳也": 12,
-    "鮫島克駿": 10, "松山弘平": 10, "キング": 10,
-    "丹内祐次": 5, "木幡巧也": 5, "大野拓弥": 5,
-    "その他（上記以外）": 0
-}
-
-jockey_score = jockey_scores.get(jockey, 0)
-if jockey_score > 0:
-    score += jockey_score
-    plus_reasons.append(f"騎手：{jockey}（+{jockey_score}）")
-
-
-# --- コース別専用ロジック ---
-if "1600m" in course:
-    if gate_num >= 13:
-        score += 25
-        plus_reasons.append("1600mの芝を長く走れる有利な外枠（+25）")
-        if is_large_heavy == "490kg以上の大型馬":
-            score += 15
-            plus_reasons.append("外枠 × パワー型の大型馬（+15）")
-    elif gate_num <= 4:
-        score -= 10
-        minus_reasons.append("1600mの砂を被りやすい不利な内枠（-10）")
-else:
-    if gate_num <= 8 and style in ["逃げ", "先行"]:
-        score += 20
-        plus_reasons.append("1400mの内〜中枠で先手を奪える好配置（+20）")
-    elif gate_num >= 13 and style in ["差し", "追い込み"]:
-        score += 15
-        plus_reasons.append("1400mの外枠から砂を被らずスムーズに差せる（+15）")
-
-# --- 特注条件加算 ---
-if distance_change == "距離短縮 (例:1800→1600)" and style in ["逃げ", "先行"]:
-    score += 20
-    plus_reasons.append("距離短縮の逃げ・先行粘り込み（+20）")
-
-if prev_track == "ローカル/中京/新潟など":
+if track_condition in ["重馬場", "不良馬場"] and style in ["逃げ", "先行"]:
     score += 15
-    plus_reasons.append("ローカルからタフな東京へのコース替わり（+15）")
+    plus_reasons.append("高速馬場への適性（+15）")
 
-# --- 前走巻き返しロジックの加算 ---
-if prev_condition == "前走は【芝】を走っていた":
-    score += 20
-    plus_reasons.append("前走芝大敗からのダート替わり一変（+20）")
-elif prev_condition == "今回【クラス下がり(降級)】":
-    score += 25
-    plus_reasons.append("相手関係が楽になるクラスダウン（+25）")
+# 血統と特注種牡馬
+lineage_scores = {"ミスプロ系": 25, "キングマンボ系": 25, "サンデー系": 15, "ロベルト系": 15, "その他": 5}
+score += lineage_scores.get(lineage, 5)
+plus_reasons.append(f"血統：{lineage}（+{lineage_scores.get(lineage, 5)}）")
 
-if prev_disadvantage == "前走【出遅れ】や【直線前詰まり】":
-    score += 15
-    plus_reasons.append("前走不完全燃焼、スムーズなら巻き返し（+15）")
-elif prev_disadvantage == "前走【ハイペースに巻き込まれ】失速" and style in ["逃げ", "先行"]:
-    score += 15
-    plus_reasons.append("前走ハイペース度外視、マイペースなら（+15）")
+if sire == "シニスターミニスター": score += 20; plus_reasons.append("特注：シニミニ（+20）")
+if sire == "ヘニーヒューズ": score += 20; plus_reasons.append("特注：ヘニーヒューズ（+20）")
 
+# 騎手・前走等
+jockey_scores = {"ルメール":30, "レーン":30, "モレイラ":30, "戸崎圭太":25, "川田将雅":20, "横山武史":20, "武豊":20, "C.デムーロ":20}
+score += jockey_scores.get(jockey, 10)
+plus_reasons.append(f"騎手評価（+{jockey_scores.get(jockey, 10)}）")
 
-# 4. 判定結果の表示
-st.subheader("📊 判定結果")
+if prev_rank in ["1着", "2着", "3着"]: score += 15; plus_reasons.append("前走好走（+15）")
+if distance_change == "あり" and style in ["逃げ", "先行"]: score += 20; plus_reasons.append("距離短縮の利（+20）")
+if prev_condition == "芝からの転戦": score += 20; plus_reasons.append("芝からの転戦（+20）")
+if prev_condition == "クラス降級": score += 25; plus_reasons.append("クラス降級（+25）")
+if prev_disadvantage == "出遅れ/詰まり": score += 15; plus_reasons.append("敗因明確（+15）")
 
+# コース
+if "1600m" in course and gate_num >= 13: score += 25; plus_reasons.append("1600m外枠（+25）")
+elif "1400m" in course and gate_num <= 8 and style in ["逃げ", "先行"]: score += 20; plus_reasons.append("1400m内枠先行（+20）")
+
+# 4. 判定結果
+st.subheader("判定結果")
 with st.container(border=True):
-    if score >= 90:
-        st.markdown(f"## **Sランク** （合計: `{score}` 点）")
-        st.markdown("<span style='color:#ff4b4b; font-weight:bold;'>【評価】本命・軸馬として信頼度最高値。勝負レース候補。</span>", unsafe_allow_html=True)
-    elif score >= 60:
-        st.markdown(f"## **Aランク** （合計: `{score}` 点）")
-        st.markdown("<span style='color:#ffaa00; font-weight:bold;'>【評価】対抗〜紐には必須。穴パターン合致なら妙味あり。</span>", unsafe_allow_html=True)
-    elif score >= 30:
-        st.markdown(f"## **Bランク** （合計: `{score}` 点）")
-        st.markdown("<span style='color:#00a0ff; font-weight:bold;'>【評価】押さえまで。展開の助けがあれば浮上可能。</span>", unsafe_allow_html=True)
-    else:
-        st.markdown(f"## **Cランク** （合計: `{score}` 点）")
-        st.markdown("<span style='color:#777777; font-weight:bold;'>【評価】静観妥当。人気を考慮し、見送りを推奨。</span>", unsafe_allow_html=True)
-
+    if score >= 100: st.markdown("## **Sランク**")
+    elif score >= 65: st.markdown("## **Aランク**")
+    elif score >= 35: st.markdown("## **Bランク**")
+    else: st.markdown("## **Cランク**")
+    st.write(f"合計得点: {score}")
     st.markdown("---")
-    
-    col_p, col_m = st.columns(2)
-    
-    with col_p:
-        st.markdown("**[+] プラス材料**")
-        if plus_reasons:
-            for r in plus_reasons:
-                st.write(f"・{r}")
-        else:
-            st.write("なし")
-            
-    with col_m:
-        st.markdown("**[-] マイナス材料**")
-        if minus_reasons:
-            for r in minus_reasons:
-                st.write(f"・{r}")
-        else:
-            st.write("なし")
+    c1, c2 = st.columns(2)
+    with c1: st.markdown("**[+]**"); [st.write(f"・{r}") for r in plus_reasons]
+    with c2: st.markdown("**[-]**"); [st.write(f"・{r}") for r in minus_reasons]
