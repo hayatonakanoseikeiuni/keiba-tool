@@ -57,8 +57,8 @@ if st.button("判定開始"):
             score += 20
             plus_reasons.append("1400m中枠の安定配置 (+20)")
         if style in ["逃げ", "先行"]:
-            score += 15
-            plus_reasons.append("1400m先行有利 (+15)")
+            score += 5
+            plus_reasons.append("1400m先行バイアス (+5)")
 
     style_scores = {
         "東京ダート 1400m": {"逃げ": 20, "先行": 20, "差し": 5, "追い込み": -10},
