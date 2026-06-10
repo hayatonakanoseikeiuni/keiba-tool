@@ -94,7 +94,14 @@ if st.button("🚀 判定開始"):
         st.markdown("---")
         
         c1, c2 = st.columns(2)
-        with c1: st.markdown("**[+] 加点要素**"); [st.write(f"・{r}") for r in plus_reasons]
-        with c2: st.markdown("**[-] 減点要素**"); [st.write(f"・{r}") for r in minus_reasons] if minus_reasons else st.write("・特になし")
-else:
-    st.info("条件を選択して「判定開始」ボタンを押してください。")
+        with c1:
+            st.markdown("**[+] 加点要素**")
+            for r in plus_reasons:
+                st.write(f"・{r}")
+        with c2:
+            st.markdown("**[-] 減点要素**")
+            if minus_reasons:
+                for r in minus_reasons:
+                    st.write(f"・{r}")
+            else:
+                st.write("・特になし")
