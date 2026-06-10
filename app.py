@@ -133,13 +133,13 @@ if st.button("判定開始"):
     st.subheader("判定結果")
     with st.container(border=True):
         if score >= 60:
-            level = "Sランク (鉄板級)"
+            level = "Sランク (軸推奨)"
         elif score >= 40:
-            level = "Aランク (勝負の一頭)"
+            level = "Aランク (馬券内堅め)"
         elif score >= 25:
             level = "Bランク (連下・抑え)"
         else:
-            level = "Cランク (消し検討)"
+            level = "Cランク (オッズ次第で消し検討)"
         
         st.markdown(f"## {level} (合計: {score}点)")
         st.markdown("---")
