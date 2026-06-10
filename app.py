@@ -37,6 +37,8 @@ with col3:
     prev_rank = st.selectbox("前走着順", ["1着", "2着", "3着", "4〜5着", "6〜9着", "10着以下"])
     prev_margin = st.selectbox("前走の着差", ["大敗", "0.6〜1.0秒差", "0.1〜0.5秒差", "勝ち"])
     is_distance_shortening = st.checkbox("前走からの距離短縮")
+    fast_last_3f = st.checkbox("上がり3F上位経験あり")
+    is_first_blinkers = st.checkbox("今回が初ブリンカー")
 
 st.markdown("---")
 
@@ -110,6 +112,12 @@ if st.button("判定開始"):
     if is_distance_shortening:
         score += 15
         plus_reasons.append("距離短縮 (+15)")
+    if fast_last_3f:
+        score += 10
+        plus_reasons.append("上がり3F上位経験あり (+10)")
+    if is_first_blinkers:
+        score += 10
+        plus_reasons.append("初ブリンカー (+10)")
 
     st.subheader("判定結果")
     with st.container(border=True):
