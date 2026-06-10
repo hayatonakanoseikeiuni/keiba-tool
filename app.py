@@ -92,9 +92,9 @@ if st.button("判定開始"):
     # 4. 判定結果表示
     st.subheader("判定結果")
     with st.container(border=True):
-        if score >= 90: level = "Sランク【軸推奨】"
-        elif score >= 60: level = "Aランク【連軸　頭まである一頭】"
-        elif score >= 35: level = "Bランク【連下・抑えでほしい一頭】"
+        if score >= 50: level = "Sランク【軸推奨】"
+        elif score >= 40: level = "Aランク【連軸　頭まである一頭】"
+        elif score >= 30: level = "Bランク【連下・抑えでほしい一頭】"
         else: level = "Cランク【オッズをみて消却も考えましょう】"
         
         st.markdown(f"## **{level}** （合計: {score}点）")
