@@ -1,13 +1,16 @@
 import streamlit as st
 
+# ページのタイトル
 st.set_page_config(page_title="東京ダート 期待度判定ツール", layout="centered")
 st.title("東京ダート 期待度判定ツール")
-st.write("2026年最新バイアス対応版：判定ロジック強化")
+st.write("2026年最新バイアス対応版：判定開始ボタン設置・詳細内訳表示")
 
+# 1. コース選択
 course = st.radio("【コース選択】", ["東京ダート 1600m", "東京ダート 1400m"], horizontal=True)
 
 st.markdown("---")
 
+# 2. 条件入力
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -39,22 +42,21 @@ prev_disadvantage = st.selectbox("前走の敗因/内容", ["特なし/実力負
 
 st.markdown("---")
 
-# 判定ボタンを設置
-if st.button("🚀 判定開始"):
-    # ここから判定処理（ボタンを押したときだけ実行）
+# 3. 判定ロジック
+if st.button("判定開始"):
     score = 0
     plus_reasons = []
     minus_reasons = []
 
-    # コース別ロジック
+    # コース・枠順バイアス
     if "1600m" in course:
-        if gate_num >= 13: score += 25; plus_reasons.append("1600m外枠バイアス（+25）")
-        elif gate_num <= 4: score -= 15; minus_reasons.append("1600m内枠砂被り（-15）")
+        if gate_num >= 13: score += 25; plus_reasons.append("1600m外枠有利（+25）")
+        elif gate_num <= 4: score -= 15; minus_reasons.append("1600m内枠の砂被りリスク（-15）")
     else: # 1400m
-        if 4 <= gate_num <= 9: score += 20; plus_reasons.append("1400m中枠安定配置（+20）")
+        if 4 <= gate_num <= 9: score += 20; plus_reasons.append("1400m中枠の安定配置（+20）")
         if style in ["逃げ", "先行"]: score += 15; plus_reasons.append("1400m先行有利（+15）")
 
-    # 騎手評価
+    # 騎手スコア
     jockey_scores = {
         "ルメール": 30, "戸崎圭太": 28, "レーン": 25, "モレイラ": 25, 
         "佐々木大輔": 22, "田辺裕信": 20, "横山武史": 20, "原優介": 18, 
@@ -71,15 +73,23 @@ if st.button("🚀 判定開始"):
     plus_reasons.append(f"騎手：{jockey}（+{j_score}）")
 
     # 血統
-    if sire in ["シニスターミニスター", "ヘニーヒューズ"]: score += 20
-    elif sire in ["ドレフォン", "マインドユアビスケッツ"]: score += 15
+    if sire in ["シニスターミニスター", "ヘニーヒューズ"]: 
+        score += 20; plus_reasons.append(f"鉄板種牡馬：{sire}（+20）")
+    elif sire in ["ドレフォン", "マインドユアビスケッツ"]: 
+        score += 15; plus_reasons.append(f"トレンド米国型：{sire}（+15）")
 
-    # 前走
-    if prev_last_3f_fastest == "あり": score += (20 if track_condition in ["重馬場", "不良馬場"] else 5)
-    if prev_rank in ["1着", "2着", "3着"]: score += 15
-    if prev_condition == "クラス降級": score += 25
+    # 前走・その他
+    if prev_last_3f_fastest == "あり": 
+        bonus = 20 if track_condition in ["重馬場", "不良馬場"] else 5
+        score += bonus; plus_reasons.append(f"前走上がり最速（+{bonus}）")
+    
+    if prev_rank in ["1着", "2着", "3着"]: 
+        score += 15; plus_reasons.append("前走好走（+15）")
+    
+    if prev_condition == "クラス降級": 
+        score += 25; plus_reasons.append("クラス降級（+25）")
 
-    # 結果表示
+    # 4. 判定結果表示
     st.subheader("判定結果")
     with st.container(border=True):
         if score >= 90: level = "Sランク"
@@ -90,16 +100,16 @@ if st.button("🚀 判定開始"):
         st.markdown(f"## **{level}** （合計: {score}点）")
         st.markdown("---")
         
-        # Reason表示部分の修正（リストが空の場合のケア）
+        # 内訳を詳細に表示
         c1, c2 = st.columns(2)
         with c1: 
-            st.markdown("**[+]**")
+            st.markdown("**[+] 加点要素**")
             for r in plus_reasons: st.write(f"・{r}")
         with c2: 
-            st.markdown("**[-]**")
+            st.markdown("**[-] 減点要素**")
             if minus_reasons:
                 for r in minus_reasons: st.write(f"・{r}")
             else:
                 st.write("・特になし")
 else:
-    st.info("条件を選択して「判定開始」ボタンを押してください。")
+    st.info("条件をすべて選択し、「判定開始」ボタンを押してください。")
