@@ -1,6 +1,6 @@
 import streamlit as st
 
-def JRA_Mile_Expectation_Engine(horse_name, base_data, current_race):
+def JRA_Mile_Expectation_Engine(base_data, current_race):
     """JRA芝1600期待値判別エンジン（マスターデータ完全連動版）"""
     score = 20  # 初期値
     venue = current_race.get('venue')
@@ -178,16 +178,16 @@ with col2:
 
 current_race_info = {"venue": venue, "track_condition": track_condition}
 
-# 2. 出走馬のデータ入力
+# 2. 出走馬のデータ入力（馬名項目を廃止、馬番のみで識別）
 st.header("出走馬データ入力")
 if "horses" not in st.session_state:
     st.session_state.horses = [
-        {'name': 'ソニックライン', 'gate_number': 16, 'jockey': '川田将雅', 'sire': 'キングカメハメハ', 'sire_group': 'キングマンボ系', 'prev_distance': 1800, 'prev_venue': '中山', 'prev_class': 'G2', 'prev_rank': 11, 'time_diff': 1.6, 'agari_fastest': False, 'is_class_up': False},
-        {'name': 'ゴディアーモ', 'gate_number': 12, 'jockey': '戸崎圭太', 'sire': 'エピファネイア', 'sire_group': 'ロベルト系', 'prev_distance': 1600, 'prev_venue': '東京', 'prev_class': '平場', 'prev_rank': 1, 'time_diff': 0.0, 'agari_fastest': False, 'is_class_up': True}
+        {'gate_number': 16, 'jockey': '川田将雅', 'sire': 'キングカメハメハ', 'sire_group': 'キングマンボ系', 'prev_distance': 1800, 'prev_venue': '中山', 'prev_class': 'G2', 'prev_rank': 11, 'time_diff': 1.6, 'agari_fastest': False, 'is_class_up': False},
+        {'gate_number': 12, 'jockey': '戸崎圭太', 'sire': 'エピファネイア', 'sire_group': 'ロベルト系', 'prev_distance': 1600, 'prev_venue': '東京', 'prev_class': '平場', 'prev_rank': 1, 'time_diff': 0.0, 'agari_fastest': False, 'is_class_up': True}
     ]
 
 if st.button("馬を追加"):
-    st.session_state.horses.append({'name': f'馬_{len(st.session_state.horses)+1}', 'gate_number': 1, 'jockey': 'C.ルメール', 'sire': '（個別指定なし）', 'sire_group': 'ディープインパクト系', 'prev_distance': 1600, 'prev_venue': '東京', 'prev_class': '平場', 'prev_rank': 1, 'time_diff': 0.0, 'agari_fastest': False, 'is_class_up': False})
+    st.session_state.horses.append({'gate_number': 1, 'jockey': 'C.ルメール', 'sire': '（個別指定なし）', 'sire_group': 'ディープインパクト系', 'prev_distance': 1600, 'prev_venue': '東京', 'prev_class': '平場', 'prev_rank': 1, 'time_diff': 0.0, 'agari_fastest': False, 'is_class_up': False})
 
 # 全登録騎手リスト
 jockey_list = [
@@ -201,30 +201,28 @@ jockey_list = [
 
 updated_horses = []
 for i, h in enumerate(st.session_state.horses):
-    with st.expander(f"{h['name']} の設定", expanded=True):
-        c1, c2, c3, c4 = st.columns(4)
+    with st.expander(f"馬番 {h['gate_number']} の設定", expanded=True):
+        c1, c2, c3 = st.columns(3)
         with c1:
-            h['name'] = st.text_input(f"馬名", h['name'], key=f"name_{i}")
             h['gate_number'] = st.number_input(f"馬番", min_value=1, max_value=18, value=int(h['gate_number']), key=f"gate_{i}")
-        with c2:
             default_jock = h['jockey'] if h['jockey'] in jockey_list else 'その他'
             h['jockey'] = st.selectbox(f"騎手名", jockey_list, index=jockey_list.index(default_jock), key=f"jock_{i}")
+        with c2:
+            sire_list = ['（個別指定なし）', 'ディープインパクト', 'キズナ', 'エピファネイア', 'ダイワメジャー', 'ロードカナロア', 'モーリス', 'ハーツクライ', 'スワーヴリチャード', 'ドゥラメンテ', 'シルバーステート', 'ハービンジャー', 'ルーラーシップ']
+            current_sire = h.get('sire', '')
+            default_sire = current_sire if current_sire in sire_list else '（個別指定なし）'
+            h['sire'] = st.selectbox(f"種牡馬名（特注12頭）", sire_list, index=sire_list.index(default_sire), key=f"sire_name_{i}")
             
             sire_group_list = ['ディープインパクト系', 'その他サンデーサイレンス系', 'キングマンボ系', 'ロベルト系', 'ノーザンダンサー系・外国産馬', 'ナスルーラ系・その他', '完全該当なし']
             default_sireg = h['sire_group'] if h['sire_group'] in sire_group_list else '完全該当なし'
             h['sire_group'] = st.selectbox(f"血統系統", sire_group_list, index=sire_group_list.index(default_sireg), key=f"sireg_{i}")
         with c3:
-            sire_list = ['（個別指定なし）', 'ディープインパクト', 'キズナ', 'エピファネイア', 'ダイワメジャー', 'ロードカナロア', 'モーリス', 'ハーツクライ', 'スワーヴリチャード', 'ドゥラメンテ', 'シルバーステート', 'ハービンジャー', 'ルーラーシップ']
-            current_sire = h.get('sire', '')
-            default_sire = current_sire if current_sire in sire_list else '（個別指定なし）'
-            h['sire'] = st.selectbox(f"種牡馬名（特注12頭）", sire_list, index=sire_list.index(default_sire), key=f"sire_name_{i}")
             h['prev_distance'] = st.number_input(f"前走距離", value=int(h['prev_distance']), step=200, key=f"pdist_{i}")
-        with c4:
             h['prev_venue'] = st.selectbox(f"前走競馬場", ["東京", "中山", "阪神", "京都", "新潟", "小倉", "福島", "中京", "函館", "札幌"], index=["東京", "中山", "阪神", "京都", "新潟", "小倉", "福島", "中京", "函館", "札幌"].index(h['prev_venue']), key=f"pvenue_{i}")
-            h['prev_rank'] = st.number_input(f"前走着順", min_value=1, max_value=18, value=int(h['prev_rank']), key=f"prank_{i}")
         
         cc1, cc2, cc3 = st.columns(3)
         with cc1:
+            h['prev_rank'] = st.number_input(f"前走着順", min_value=1, max_value=18, value=int(h['prev_rank']), key=f"prank_{i}")
             h['time_diff'] = st.number_input(f"前走タイム差", value=float(h['time_diff']), step=0.1, key=f"tdiff_{i}")
         with cc2:
             h['prev_class'] = st.selectbox(f"前走クラス", ['平場', 'G3', 'G2', 'G1'], index=['平場', 'G3', 'G2', 'G1'].index(h.get('prev_class', '平場')), key=f"pclass_{i}")
@@ -238,29 +236,29 @@ for i, h in enumerate(st.session_state.horses):
 
 st.session_state.horses = updated_horses
 
-# 3. 判定ボタンとランキング表示
+# 3. 判定ボタンとランキング表示（絵文字なし、馬番表示）
 st.write("---")
 if st.button("期待値ランキングを計算", type="primary"):
     ranking_list = []
     for horse in st.session_state.horses:
-        score = JRA_Mile_Expectation_Engine(horse['name'], horse, current_race_info)
+        score = JRA_Mile_Expectation_Engine(horse, current_race_info)
         
-        # ランクの判定と対応するカラーコードを設定
-        if score >= 55:
+        # 厳格化した基準値（案3）
+        if score >= 60:
             band = "S"
-            color = "#FF3333"  # 鮮やかな赤（本命・特注）
-        elif score >= 45:
+            color = "#FF3333"
+        elif score >= 50:
             band = "A"
-            color = "#FFA500"  # オレンジ（対抗）
-        elif score >= 35:
+            color = "#FFA500"
+        elif score >= 38:
             band = "B"
-            color = "#1E90FF"  # 道の青（連下・穴）
+            color = "#1E90FF"
         else:
             band = "C"
-            color = "#778899"  # グレー（静観）
+            color = "#778899"
             
         ranking_list.append({
-            'name': horse['name'], 
+            'gate_number': horse['gate_number'], 
             'score': score, 
             'jockey': horse['jockey'],
             'band': band,
@@ -271,9 +269,9 @@ if st.button("期待値ランキングを計算", type="primary"):
     
     st.header("判定結果")
     for rank, h_info in enumerate(ranking_list, 1):
-        # HTMLベースのmarkdownで文字にダイレクトに色付け
+        # シンプルに色付きランクと馬番・ジョッキーのみを表示
         st.markdown(
             f"### Rank {rank} [<span style='color:{h_info['color']}; font-weight:bold;'>{h_info['band']}</span>]: "
-            f"{h_info['name']} ({h_info['jockey']}) -> **{h_info['score']}** POINTS", 
+            f"馬番 {h_info['gate_number']} ({h_info['jockey']}) -> **{h_info['score']}** POINTS", 
             unsafe_allow_html=True
         )
