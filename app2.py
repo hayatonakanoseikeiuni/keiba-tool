@@ -1,4 +1,3 @@
-
 import streamlit as st
 
 def JRA_Mile_Expectation_Engine(base_data, current_race):
