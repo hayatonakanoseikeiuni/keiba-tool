@@ -63,14 +63,13 @@ def JRA_Mile_Expectation_Engine(base_data, current_race):
         '長岡禎仁':   {'東京': 1,  '中山': 1,  '阪神': 2,  '京都': 2},
         '水口優也':   {'東京': 1,  '中山': 1,  '阪神': 2,  '京都': 2},
         '舟山瑠泉':   {'東京': 2,  '中山': 4,  '阪神': 2,  '京都': 2},
-        'ゴンザルベス':{'東京': 14, '中山': 10, '阪神': 12, '京都': 11}
+        'ゴンザルベス':{'東京': 14, '中山': 10, '阪神': 12, '京都': 11},
+        'その他':     {'東京': 5,  '中山': 5,  '阪神': 5,  '京都': 5}
     }
 
-    # 1. 騎手判定
     jockey = base_data.get('jockey')
     if venue in ['東京', '中山', '阪神', '京都'] and jockey in jockey_master_data:
         score += jockey_master_data[jockey].get(venue, 0)
-
     # ========================================================
     # 🌟 種牡馬＆血統系統 競馬場別マイル適性マスターデータ
     # ========================================================
@@ -163,6 +162,27 @@ def JRA_Mile_Expectation_Engine(base_data, current_race):
     if venue == '中山' and gate in [1, 2, 3, 4]: score += 13
     elif venue == '東京' and gate in [9, 10, 11, 12, 13, 14]: score += 5
     
+
+     # ========================================================
+    # 🔥追加要素
+    # ========================================================
+    if base_data.get('first_blinder'):
+        score += 10
+
+    prev_condition = base_data.get('prev_condition')
+    current_condition = current_race.get('track_condition')
+
+    if prev_condition in ['重', '不良'] and current_condition in ['良', '稍重']:
+        score += 8
+
+    style = base_data.get('running_style')
+    if venue == '東京':
+        if style == '差し':
+            score += 5
+        elif style == '追込':
+            score += 3
+
+   
     return score
 
 # ==========================================
