@@ -1,7 +1,7 @@
 import streamlit as st
 
 def JRA_Mile_Expectation_Engine(base_data, current_race):
-    """JRA芝1600期待値判別エンジン（マスターデータ完全連動版）"""
+    """JRA芝1600期待値判別エンジン（新馬戦フラット評価・マスターデータ連動版）"""
     score = 20  # 初期値
     venue = current_race.get('venue')
 
@@ -99,64 +99,64 @@ def JRA_Mile_Expectation_Engine(base_data, current_race):
         '完全該当なし':              {'東京': 0,  '中山': 0,  '阪神': 0,  '京都': 0}
     }
 
-    # 2. 血統判定（★二重加点防止ガード改修）
+    # 2. 血統判定（二重加点防止ガード）
     sire = base_data.get('sire', '（個別指定なし）')
     sire_group = base_data.get('sire_group')
     sire_score = 0
 
     if venue in ['東京', '中山', '阪神', '京都']:
-        # 個別指定（特注12頭のいずれか）がある場合は、そちらのみを採用
         if sire != '（個別指定なし）' and sire in sire_individual_data:
             sire_score = sire_individual_data[sire].get(venue, 0)
-        # 個別指定がない（その他）場合のみ、手動選択された系統の点数を採用
         elif sire_group in sire_group_data:
             sire_score = sire_group_data[sire_group].get(venue, 0)
             
     score += sire_score
 
-    # 3. 前走距離・今回開催場所
-    prev_distance = base_data.get('prev_distance')
-    dist_score = 0
-    if prev_distance >= 2000:
-        dist_score = 14 if venue in ['東京', '阪神'] else 5
-    elif prev_distance == 1800: dist_score = 6
-    elif prev_distance == 1400: dist_score = 4
-    score += dist_score
+    # ⚠️ 新馬戦（前走クラスが「新馬（前走なし）」）の場合は特例ルート（補正加点なしの完全フラット）
+    if base_data.get('prev_class') != '新馬（前走なし）':
+        # 既走馬のみ：3. 前走距離・今回開催場所
+        prev_distance = base_data.get('prev_distance')
+        dist_score = 0
+        if prev_distance >= 2000:
+            dist_score = 14 if venue in ['東京', '阪神'] else 5
+        elif prev_distance == 1800: dist_score = 6
+        elif prev_distance == 1400: dist_score = 4
+        score += dist_score
 
-    # 4. 前走場所 -> 今回場所
-    prev_venue = base_data.get('prev_venue')
-    venue_score = 0
-    if prev_venue in ['中山', '小倉', '福島', '函館', '札幌'] and venue in ['東京', '阪神']: venue_score = 11
-    elif prev_venue in ['東京', '京都', '新潟'] and venue == '中山': venue_score = 3
-    score += venue_score
+        # 既走馬のみ：4. 前走場所 -> 今回場所
+        prev_venue = base_data.get('prev_venue')
+        venue_score = 0
+        if prev_venue in ['中山', '小倉', '福島', '函館', '札幌'] and venue in ['東京', '阪神']: venue_score = 11
+        elif prev_venue in ['東京', '京都', '新潟'] and venue == '中山': venue_score = 3
+        score += venue_score
 
-    # 5. 前走着順・タイム差・クラス
-    prev_rank = base_data.get('prev_rank')
-    time_difference = base_data.get('time_diff')
-    prev_class = base_data.get('prev_class')
-    prev_performance = base_data.get('prev_performance', [])
-    has_best_agari = '上がり最速' in prev_performance
-    
-    perf_score = 0
-    is_disqualified = False
-    if prev_rank <= 1: perf_score += 8 if not base_data.get('is_class_up') else 4
-    elif 2 <= prev_rank <= 3: perf_score += 6
-    elif 4 <= prev_rank <= 5 or time_difference <= 0.3: perf_score += 3
-    else:
-        if prev_class in ['G1', 'G2', 'G3']:
-            if time_difference < 2.0: perf_score += 7
-            else: is_disqualified = True
-        else:
-            if time_difference >= 2.0: is_disqualified = True
-            elif time_difference <= 0.9 and has_best_agari: perf_score += 18
-            elif time_difference <= 0.9: perf_score += 7
-            elif has_best_agari: perf_score += 11
-
-    if is_disqualified:
-        score -= dist_score
-        score -= venue_score
+        # 既走馬のみ：5. 前走着順・タイム差・クラス
+        prev_rank = base_data.get('prev_rank')
+        time_difference = base_data.get('time_diff')
+        prev_class = base_data.get('prev_class')
+        prev_performance = base_data.get('prev_performance', [])
+        has_best_agari = '上がり最速' in prev_performance
+        
         perf_score = 0
-    score += perf_score
+        is_disqualified = False
+        if prev_rank <= 1: perf_score += 8 if not base_data.get('is_class_up') else 4
+        elif 2 <= prev_rank <= 3: perf_score += 6
+        elif 4 <= prev_rank <= 5 or time_difference <= 0.3: perf_score += 3
+        else:
+            if prev_class in ['G1', 'G2', 'G3']:
+                if time_difference < 2.0: perf_score += 7
+                else: is_disqualified = True
+            else:
+                if time_difference >= 2.0: is_disqualified = True
+                elif time_difference <= 0.9 and has_best_agari: perf_score += 18
+                elif time_difference <= 0.9: perf_score += 7
+                elif has_best_agari: perf_score += 11
+
+        if is_disqualified:
+            score -= dist_score
+            score -= venue_score
+            perf_score = 0
+        score += perf_score
 
     # 6. 枠順（馬番）
     gate = base_data.get('gate_number')
@@ -184,7 +184,7 @@ current_race_info = {"venue": venue, "track_condition": track_condition}
 st.header("出走馬データ入力")
 if "horses" not in st.session_state:
     st.session_state.horses = [
-        {'gate_number': 16, 'jockey': '川田将雅', 'sire': 'キングカメハメハ', 'sire_group': 'キングマンボ系', 'prev_distance': 1800, 'prev_venue': '中山', 'prev_class': 'G2', 'prev_rank': 11, 'time_diff': 1.6, 'agari_fastest': False, 'is_class_up': False},
+        {'gate_number': 16, 'jockey': '川田将雅', 'sire': '（個別指定なし）', 'sire_group': 'キングマンボ系', 'prev_distance': 1800, 'prev_venue': '中山', 'prev_class': 'G2', 'prev_rank': 11, 'time_diff': 1.6, 'agari_fastest': False, 'is_class_up': False},
         {'gate_number': 12, 'jockey': '戸崎圭太', 'sire': 'エピファネイア', 'sire_group': 'ロベルト系', 'prev_distance': 1600, 'prev_venue': '東京', 'prev_class': '平場', 'prev_rank': 1, 'time_diff': 0.0, 'agari_fastest': False, 'is_class_up': True}
     ]
 
@@ -219,21 +219,31 @@ for i, h in enumerate(st.session_state.horses):
             default_sireg = h['sire_group'] if h['sire_group'] in sire_group_list else '完全該当なし'
             h['sire_group'] = st.selectbox(f"血統系統", sire_group_list, index=sire_group_list.index(default_sireg), key=f"sireg_{i}")
         with c3:
-            h['prev_distance'] = st.number_input(f"前走距離", value=int(h['prev_distance']), step=200, key=f"pdist_{i}")
-            h['prev_venue'] = st.selectbox(f"前走競馬場", ["東京", "中山", "阪神", "京都", "新潟", "小倉", "福島", "中京", "函館", "札幌"], index=["東京", "中山", "阪神", "京都", "新潟", "小倉", "福島", "中京", "函館", "札幌"].index(h['prev_venue']), key=f"pvenue_{i}")
-        
-        cc1, cc2, cc3 = st.columns(3)
-        with cc1:
-            h['prev_rank'] = st.number_input(f"前走着順", min_value=1, max_value=18, value=int(h['prev_rank']), key=f"prank_{i}")
-            h['time_diff'] = st.number_input(f"前走タイム差", value=float(h['time_diff']), step=0.1, key=f"tdiff_{i}")
-        with cc2:
-            h['prev_class'] = st.selectbox(f"前走クラス", ['平場', 'G3', 'G2', 'G1'], index=['平場', 'G3', 'G2', 'G1'].index(h.get('prev_class', '平場')), key=f"pclass_{i}")
-        with cc3:
-            h['agari_fastest'] = st.checkbox("前走上がり最速", value=h['agari_fastest'], key=f"agari_{i}")
-            h['is_class_up'] = st.checkbox("今回昇級戦", value=h['is_class_up'], key=f"class_{i}")
+            h['prev_class'] = st.selectbox(f"前走クラス", ['平場', 'G3', 'G2', 'G1', '新馬（前走なし）'], index=['平場', 'G3', 'G2', 'G1', '新馬（前走なし）'].index(h.get('prev_class', '平場')), key=f"pclass_{i}")
+
+        # 新馬以外の場合のみ、前走の細かい情報を入力させる
+        if h['prev_class'] != '新馬（前走なし）':
+            cc1, cc2, cc3 = st.columns(3)
+            with cc1:
+                h['prev_distance'] = st.number_input(f"前走距離", value=int(h.get('prev_distance', 1600)), step=200, key=f"pdist_{i}")
+                h['prev_venue'] = st.selectbox(f"前走競馬場", ["東京", "中山", "阪神", "京都", "新潟", "小倉", "福島", "中京", "函館", "札幌"], index=["東京", "中山", "阪神", "京都", "新潟", "小倉", "福島", "中京", "函館", "札幌"].index(h.get('prev_venue', '東京')), key=f"pvenue_{i}")
+            with cc2:
+                h['prev_rank'] = st.number_input(f"前走着順", min_value=1, max_value=18, value=int(h.get('prev_rank', 1)), key=f"prank_{i}")
+                h['time_diff'] = st.number_input(f"前走タイム差", value=float(h.get('time_diff', 0.0)), step=0.1, key=f"tdiff_{i}")
+            with cc3:
+                h['agari_fastest'] = st.checkbox("前走上がり最速", value=h.get('agari_fastest', False), key=f"agari_{i}")
+                h['is_class_up'] = st.checkbox("今回昇級戦", value=h.get('is_class_up', False), key=f"class_{i}")
+            h['prev_performance'] = ['上がり最速'] if h['agari_fastest'] else []
+        else:
+            # 新馬の時は内部データをデフォルト値にリセット
+            h['prev_distance'] = 1600
+            h['prev_venue'] = '東京'
+            h['prev_rank'] = 1
+            h['time_diff'] = 0.0
+            h['agari_fastest'] = False
+            h['is_class_up'] = False
+            h['prev_performance'] = []
             
-        h['prev_performance'] = ['上がり最速'] if h['agari_fastest'] else []
-        
         updated_horses.append(h)
 
 st.session_state.horses = updated_horses
