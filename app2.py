@@ -1,7 +1,7 @@
 import streamlit as st
 
 def JRA_Mile_Expectation_Engine(horse_name, base_data, current_race):
-    """JRA芝1600期待値判別エンジン"""
+    """JRA芝1600期待値判別エンジン（マスターデータ完全連動版）"""
     score = 20  # 初期値
     venue = current_race.get('venue')
 
@@ -61,7 +61,9 @@ def JRA_Mile_Expectation_Engine(horse_name, base_data, current_race):
         '酒井学':     {'東京': 1,  '中山': 1,  '阪神': 3,  '京都': 3},
         '柴田大知':   {'東京': 1,  '中山': 3,  '阪神': 1,  '京都': 1},
         '長岡禎仁':   {'東京': 1,  '中山': 1,  '阪神': 2,  '京都': 2},
-        '水口優也':   {'東京': 1,  '中山': 1,  '阪神': 2,  '京都': 2}
+        '水口優也':   {'東京': 1,  '中山': 1,  '阪神': 2,  '京都': 2},
+        '舟山瑠泉':   {'東京': 2,  '中山': 4,  '阪神': 2,  '京都': 2},
+        'ゴンザルベス':{'東京': 14, '中山': 10, '阪神': 12, '京都': 11}
     }
 
     # 1. 騎手判定
@@ -70,7 +72,7 @@ def JRA_Mile_Expectation_Engine(horse_name, base_data, current_race):
         score += jockey_master_data[jockey].get(venue, 0)
 
     # ========================================================
-    # 種牡馬＆血統系統 競馬場別マイル適性マスターデータ
+    # 🌟 種牡馬＆血統系統 競馬場別マイル適性マスターデータ
     # ========================================================
     sire_individual_data = {
         'ディープインパクト': {'東京': 20, '中山': 4,  '阪神': 15, '京都': 18},
@@ -194,7 +196,7 @@ jockey_list = [
     '丹内祐次', '佐々木大輔', '横山和生', '北村友一', '田辺裕信', '藤岡佑介', '幸英明', '大野拓弥', '石川裕紀人', '荻野極',
     '北村宏司', '丸山元気', '石橋脩', '武藤雅', '内田博幸', '木幡巧也', '吉田隼人', '永島まなみ', '和田竜二', '古川吉洋',
     '秋山稔樹', '小沢大仁', '角田大河', '今村聖奈', '松若風馬', '斎藤新', '国分優作', '国分恭介', '富田暁', '高田潤',
-    '太宰啓介', '酒井学', '柴田大知', '長岡禎仁', '水口優也', 'その他'
+    '太宰啓介', '酒井学', '柴田大知', '長岡禎仁', '水口優也', '舟山瑠泉', 'ゴンザルベス', 'その他'
 ]
 
 updated_horses = []
@@ -243,27 +245,35 @@ if st.button("期待値ランキングを計算", type="primary"):
     for horse in st.session_state.horses:
         score = JRA_Mile_Expectation_Engine(horse['name'], horse, current_race_info)
         
-        # 点数に応じたランク付けロジック
+        # ランクの判定と対応するカラーコードを設定
         if score >= 55:
             band = "S"
+            color = "#FF3333"  # 鮮やかな赤（本命・特注）
         elif score >= 45:
             band = "A"
+            color = "#FFA500"  # オレンジ（対抗）
         elif score >= 35:
             band = "B"
+            color = "#1E90FF"  # 道の青（連下・穴）
         else:
             band = "C"
+            color = "#778899"  # グレー（静観）
             
         ranking_list.append({
             'name': horse['name'], 
             'score': score, 
             'jockey': horse['jockey'],
-            'band': band
+            'band': band,
+            'color': color
         })
     
-    # スコア順にソート
     ranking_list.sort(key=lambda x: x['score'], reverse=True)
     
     st.header("判定結果")
     for rank, h_info in enumerate(ranking_list, 1):
-        # 画面表示にランク（S/A/B/C）を埋め込む
-        st.subheader(f"Rank {rank} [{h_info['band']}]: {h_info['name']} ({h_info['jockey']}) -> {h_info['score']} POINTS")
+        # HTMLベースのmarkdownで文字にダイレクトに色付け
+        st.markdown(
+            f"### Rank {rank} [<span style='color:{h_info['color']}; font-weight:bold;'>{h_info['band']}</span>]: "
+            f"{h_info['name']} ({h_info['jockey']}) -> **{h_info['score']}** POINTS", 
+            unsafe_allow_html=True
+        )
