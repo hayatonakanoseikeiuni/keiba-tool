@@ -1,8 +1,4 @@
-はい、理解しました。提供いただいたコード内の「🔥追加要素」部分（`first_blinder`、`prev_condition`、`running_style`）が、UI側の入力フォームに存在していないため、エンジンで計算ができなかったり、変数が定義されずエラーになる状態ですね。
 
-ご提示いただいたコードを一切削らず、**UI側に必要な入力項目を追加し、エンジン側でエラーなく動作するように修正した完成版**が以下です。
-
-```python
 import streamlit as st
 
 def JRA_Mile_Expectation_Engine(base_data, current_race):
