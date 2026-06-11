@@ -99,14 +99,16 @@ def JRA_Mile_Expectation_Engine(base_data, current_race):
         '完全該当なし':              {'東京': 0,  '中山': 0,  '阪神': 0,  '京都': 0}
     }
 
-    # 2. 血統判定
-    sire = base_data.get('sire', '')
+    # 2. 血統判定（★二重加点防止ガード改修）
+    sire = base_data.get('sire', '（個別指定なし）')
     sire_group = base_data.get('sire_group')
     sire_score = 0
 
     if venue in ['東京', '中山', '阪神', '京都']:
-        if sire in sire_individual_data:
+        # 個別指定（特注12頭のいずれか）がある場合は、そちらのみを採用
+        if sire != '（個別指定なし）' and sire in sire_individual_data:
             sire_score = sire_individual_data[sire].get(venue, 0)
+        # 個別指定がない（その他）場合のみ、手動選択された系統の点数を採用
         elif sire_group in sire_group_data:
             sire_score = sire_group_data[sire_group].get(venue, 0)
             
@@ -178,7 +180,7 @@ with col2:
 
 current_race_info = {"venue": venue, "track_condition": track_condition}
 
-# 2. 出走馬のデータ入力（馬名項目を廃止、馬番のみで識別）
+# 2. 出走馬のデータ入力
 st.header("出走馬データ入力")
 if "horses" not in st.session_state:
     st.session_state.horses = [
@@ -236,14 +238,14 @@ for i, h in enumerate(st.session_state.horses):
 
 st.session_state.horses = updated_horses
 
-# 3. 判定ボタンとランキング表示（絵文字なし、馬番表示）
+# 3. 判定ボタンとランキング表示
 st.write("---")
 if st.button("期待値ランキングを計算", type="primary"):
     ranking_list = []
     for horse in st.session_state.horses:
         score = JRA_Mile_Expectation_Engine(horse, current_race_info)
         
-        # 厳格化した基準値（案3）
+        # 厳格化した基準値
         if score >= 60:
             band = "S"
             color = "#FF3333"
@@ -269,7 +271,6 @@ if st.button("期待値ランキングを計算", type="primary"):
     
     st.header("判定結果")
     for rank, h_info in enumerate(ranking_list, 1):
-        # シンプルに色付きランクと馬番・ジョッキーのみを表示
         st.markdown(
             f"### Rank {rank} [<span style='color:{h_info['color']}; font-weight:bold;'>{h_info['band']}</span>]: "
             f"馬番 {h_info['gate_number']} ({h_info['jockey']}) -> **{h_info['score']}** POINTS", 
