@@ -160,7 +160,8 @@ def JRA_Mile_Expectation_Engine(base_data, current_race):
     return score
 
 st.title("JRA芝1600 期待値判別エンジン")
-
+st.sidebar.markdown("---")
+st.sidebar.caption("Produced by hayatonakano")
 st.header("レース環境設定")
 col1, col2 = st.columns(2)
 with col1:
