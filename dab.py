@@ -9,7 +9,7 @@ num_entries = st.number_input("エントリー数（チームの数）", min_val
 st.subheader("各エントリーへの投票数を入力してください")
 votes = {}
 for i in range(num_entries):
-    votes[f"チーム {i+1}"] = st.number_input(f"エントリー {i+1} の得票数", min_value=0, value=0)
+    votes[f"エントリー {i+1}"] = st.number_input(f"エントリー {i+1} の得票数", min_value=0, value=0)
 
 if st.button("オッズを計算"):
     current_total = sum(votes.values())
